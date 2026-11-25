@@ -451,7 +451,7 @@
       description = t('app.description');
     } else if (page === 'world') {
       title = t('world.title') + ' · ' + brand;
-      description = t('world.lede');
+      description = t('app.description');
     } else if (page === 'more') {
       title = t('more.title') + ' · ' + brand;
       description = t('more.lede');
@@ -1220,25 +1220,15 @@
 
     var localClock = el('b', { text: formatClockTime(now) });
     var utcClock = el('b', { text: formatUtcClock(now) });
-    var status = el('div', { class: 'status-bar' }, [
-      (function () {
-        var live = el('span', { class: 'chip chip--accent' });
-        live.appendChild(el('span', { class: 'live-dot' }));
-        live.appendChild(document.createTextNode(t('world.predicted')));
-        return live;
-      }()),
-      chip(t('world.reset')),
-      el('div', { class: 'clock-line' }, [
-        el('span', {}, [document.createTextNode(t('world.local') + ' '), localClock]),
-        el('span', {}, [document.createTextNode(t('world.utc') + ' '), utcClock])
-      ])
+    var clockLine = el('div', { class: 'clock-line' }, [
+      el('span', {}, [document.createTextNode(t('world.local') + ' '), localClock]),
+      el('span', {}, [document.createTextNode(t('world.utc') + ' '), utcClock])
     ]);
 
     var header = el('header', { class: 'page-head' }, [
       el('p', { class: 'eyebrow', text: t('world.eyebrow') }),
       el('h1', { text: t('world.title') }),
-      el('p', { class: 'lede', text: t('world.lede') }),
-      status
+      clockLine
     ]);
 
     var timeCard = buildTimeCard(clock, refs);

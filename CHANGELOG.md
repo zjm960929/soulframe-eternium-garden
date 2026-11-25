@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- World State header: removed the descriptive lede and the two status chips; local and UTC clocks now sit directly below the page heading.
+
 ## 0.1.0 - 2026-11-26
 
 First public-ready release.

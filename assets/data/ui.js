@@ -31,9 +31,6 @@
 
       'world.eyebrow': '实时推算',
       'world.title': '世界状态',
-      'world.lede': '密德拉的昼夜、天气、泽尼斯的商品与受祝福的会面，全部由 UTC 时间离线推算。',
-      'world.predicted': '离线推算，非官方 API',
-      'world.reset': '每日 00:00 UTC 重置',
       'world.local': '本地',
       'world.utc': 'UTC',
       'world.tzNote': '时间按你的本地时区显示；每日内容以 00:00 UTC 为界。',
@@ -157,9 +154,6 @@
 
       'world.eyebrow': 'LIVE PREDICTION',
       'world.title': 'World State',
-      'world.lede': "Midrath's clock, weather, Zenith's wares and the Blessed Meeting, all predicted offline from UTC time.",
-      'world.predicted': 'Offline prediction, not an official API',
-      'world.reset': 'Resets daily at 00:00 UTC',
       'world.local': 'Local',
       'world.utc': 'UTC',
       'world.tzNote': 'Times are shown in your local timezone; daily content changes at 00:00 UTC.',
