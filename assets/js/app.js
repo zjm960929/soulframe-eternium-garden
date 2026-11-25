@@ -11,13 +11,15 @@
   var THEME_KEY = 'sf-eg-theme';
   var LANG_KEY = 'sf-eg-lang';
   var WORLD_LAYOUT_KEY = 'sf-eg-world-layout';
+  var WORLD_WIDTH_KEY = 'sf-eg-world-layout-widths';
+  var WORLD_WIDTHS = [4, 6, 8, 12];
   var SVG_NS = 'http://www.w3.org/2000/svg';
 
   var WORLD_MODULES = [
-    { key: 'time', labelKey: 'world.time.title' },
-    { key: 'weather', labelKey: 'world.weather.title' },
-    { key: 'zenith', labelKey: 'world.zenith.title' },
-    { key: 'meeting', labelKey: 'world.meeting.title' }
+    { key: 'time', labelKey: 'world.time.title', min: 4, max: 8, preferred: 6 },
+    { key: 'weather', labelKey: 'world.weather.title', min: 4, max: 8, preferred: 6 },
+    { key: 'zenith', labelKey: 'world.zenith.title', min: 4, max: 12, preferred: 6 },
+    { key: 'meeting', labelKey: 'world.meeting.title', min: 4, max: 12, preferred: 6 }
   ];
   var DEFAULT_WORLD_LAYOUT = WORLD_MODULES.map(function (module) { return module.key; });
 
@@ -59,6 +61,7 @@
     arrow: '<path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path>',
     info: '<circle cx="12" cy="12" r="9"></circle><path d="M12 11v5M12 8h.01"></path>',
     layout: '<rect x="3" y="4" width="18" height="5" rx="1.5"></rect><rect x="3" y="15" width="11" height="5" rx="1.5"></rect><path d="M18 17h3M8 6h8"></path>',
+    drag: '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01" stroke-width="3" stroke-linecap="round"></path>',
     sun: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"></path>',
     wind: '<path d="M12.8 19.6A2 2 0 1 0 14 16H2"></path><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"></path><path d="M9.8 4.4A2 2 0 1 1 11 8H2"></path>',
     'cloud-sun': '<path d="M12 2v2M4.9 4.9l1.4 1.4M20 12h2M19.1 4.9l-1.4 1.4"></path><path d="M15.9 12.6a4 4 0 0 0-5.9-4.1"></path><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"></path>',
@@ -121,6 +124,44 @@
 
   function saveWorldLayout(order) {
     writeStorage(WORLD_LAYOUT_KEY, JSON.stringify(order));
+  }
+
+  function worldModuleByKey(key) {
+    for (var i = 0; i < WORLD_MODULES.length; i++) {
+      if (WORLD_MODULES[i].key === key) return WORLD_MODULES[i];
+    }
+    return null;
+  }
+
+  function supportedWorldWidths(module) {
+    var widths = [];
+    for (var i = 0; i < WORLD_WIDTHS.length; i++) {
+      if (WORLD_WIDTHS[i] >= module.min && WORLD_WIDTHS[i] <= module.max) {
+        widths.push(WORLD_WIDTHS[i]);
+      }
+    }
+    return widths;
+  }
+
+  function loadWorldWidths() {
+    var parsed = null;
+    try { parsed = JSON.parse(readStorage(WORLD_WIDTH_KEY) || 'null'); }
+    catch (error) { parsed = null; }
+    if (!parsed || typeof parsed !== 'object') return {};
+    var widths = {};
+    for (var key in parsed) {
+      if (!Object.prototype.hasOwnProperty.call(parsed, key)) continue;
+      var module = worldModuleByKey(key);
+      var value = parsed[key];
+      if (!module || WORLD_WIDTHS.indexOf(value) === -1) continue;
+      if (value < module.min || value > module.max) continue;
+      widths[key] = value;
+    }
+    return widths;
+  }
+
+  function saveWorldWidths(widths) {
+    writeStorage(WORLD_WIDTH_KEY, JSON.stringify(widths));
   }
 
   function queryParam(name) {
@@ -1132,6 +1173,14 @@
   var MASONRY_MIN_WIDTH = 901;
   var MASONRY_ROW_HEIGHT = 8;
 
+  function layoutWorldGrid(grid, cards, widths) {
+    if (widths && Object.keys(widths).length) {
+      layoutWorldGridWidths(grid, cards, widths);
+      return;
+    }
+    layoutBalancedWorldGrid(grid, cards);
+  }
+
   /**
    * Place the four world modules in two contiguous, height-balanced columns.
    *
@@ -1141,7 +1190,7 @@
    * column, then gives every card an explicit grid row span (8px rows) so the
    * next card in the same column starts immediately after it.
    */
-  function layoutWorldGrid(grid, cards) {
+  function layoutBalancedWorldGrid(grid, cards) {
     var i;
     for (i = 0; i < cards.length; i++) {
       cards[i].style.gridColumn = '';
@@ -1246,6 +1295,86 @@
     return heights;
   }
 
+  /**
+   * Width-aware skyline placement. Explicit width choices use the module's
+   * exact 12-column span; "auto" modules try every supported span and prefer
+   * their configured width, so the result stays close to the default layout.
+   */
+  function layoutWorldGridWidths(grid, cards, widths) {
+    var i;
+    for (i = 0; i < cards.length; i++) {
+      cards[i].style.gridColumn = '';
+      cards[i].style.gridRow = '';
+    }
+    grid.classList.remove('is-masonry');
+    if (!grid.isConnected || window.innerWidth < MASONRY_MIN_WIDTH || !cards.length) return;
+
+    var computed = window.getComputedStyle(grid);
+    var gap = parseFloat(computed.rowGap || computed.columnGap || computed.gap);
+    if (!isFinite(gap)) gap = 18;
+    var columns = 12;
+    var heights = [];
+    for (i = 0; i < columns; i++) heights.push(0);
+
+    var measurements = [];
+    for (i = 0; i < cards.length; i++) {
+      var key = cards[i].getAttribute('data-module-key');
+      var module = worldModuleByKey(key);
+      if (!module) continue;
+      var allowed = supportedWorldWidths(module);
+      var selected = widths[key];
+      var candidatesWidths = selected ? [selected] : allowed;
+      var candidates = [];
+      for (var c = 0; c < candidatesWidths.length; c++) {
+        cards[i].style.gridColumn = '1 / span ' + candidatesWidths[c];
+        cards[i].style.gridRow = '';
+        var height = cards[i].getBoundingClientRect().height;
+        candidates.push({
+          width: candidatesWidths[c],
+          units: Math.max(1, Math.ceil((height + gap) / (MASONRY_ROW_HEIGHT + gap)))
+        });
+      }
+      cards[i].style.gridColumn = '';
+      cards[i].style.gridRow = '';
+      measurements.push({
+        card: cards[i],
+        candidates: candidates,
+        preferred: module.preferred || 6
+      });
+    }
+
+    for (i = 0; i < measurements.length; i++) {
+      var measurement = measurements[i];
+      var best = null;
+      for (var ci = 0; ci < measurement.candidates.length; ci++) {
+        var candidate = measurement.candidates[ci];
+        for (var column = 0; column <= columns - candidate.width; column++) {
+          var row = 0;
+          for (var offset = 0; offset < candidate.width; offset++) {
+            row = Math.max(row, heights[column + offset]);
+          }
+          var distance = Math.abs(candidate.width - measurement.preferred);
+          var bestDistance = best ? Math.abs(best.width - measurement.preferred) : Infinity;
+          if (!best
+            || row < best.row
+            || (row === best.row && distance < bestDistance)
+            || (row === best.row && distance === bestDistance && candidate.width > best.width)) {
+            best = { row: row, column: column, width: candidate.width, units: candidate.units };
+          }
+        }
+      }
+      if (!best) {
+        best = { row: 0, column: 0, width: 12, units: 1 };
+      }
+      measurement.card.style.gridColumn = (best.column + 1) + ' / span ' + best.width;
+      measurement.card.style.gridRow = (best.row + 1) + ' / span ' + best.units;
+      for (var span = 0; span < best.width; span++) {
+        heights[best.column + span] = best.row + best.units;
+      }
+    }
+    grid.classList.add('is-masonry');
+  }
+
   function renderWorld() {
     var now = Date.now();
     var day = core.dayNum(now);
@@ -1281,10 +1410,26 @@
     }
 
     var layoutOrder = loadWorldLayout();
+    var layoutWidths = loadWorldWidths();
     var cards = [];
-    for (var ci = 0; ci < layoutOrder.length; ci++) cards.push(cardMap[layoutOrder[ci]]);
+    for (var ci = 0; ci < layoutOrder.length; ci++) {
+      var initialCard = cardMap[layoutOrder[ci]];
+      initialCard.setAttribute('data-module-key', layoutOrder[ci]);
+      cards.push(initialCard);
+    }
 
     var grid = el('div', { class: 'world-grid' }, cards);
+
+    var editorOpen = false;
+    var dragKey = null;
+    var dragStartOrder = null;
+    var dragSourceNode = null;
+    var dragPointerX = 0;
+    var dragPointerY = 0;
+    var autoScrollFrame = 0;
+    var pointerDragCleanup = null;
+    var AUTO_SCROLL_EDGE = 84;
+    var AUTO_SCROLL_MAX = 9;
 
     var layoutList = el('ol', { class: 'layout-list' });
     var layoutStatus = el('p', { class: 'layout-status', role: 'status', 'aria-live': 'polite' });
@@ -1308,7 +1453,7 @@
       el('div', { class: 'layout-editor__head' }, [
         el('div', {}, [
           layoutTitle,
-          el('p', { class: 'layout-editor__hint', text: t('layout.hint') })
+          el('p', { class: 'layout-editor__hint', id: 'layout-hint', text: t('layout.hint') })
         ]),
         el('div', { class: 'layout-editor__actions' }, [resetLayoutButton, closeLayoutButton])
       ]),
@@ -1327,10 +1472,14 @@
     ]);
     header.appendChild(el('div', { class: 'page-actions' }, [layoutButton]));
 
-    function setEditorOpen(open) {
-      layoutEditor.hidden = !open;
-      layoutButton.setAttribute('aria-expanded', String(open));
-      if (!open) layoutButton.focus({ preventScroll: true });
+    function requestDragFrame(callback) {
+      if (window.requestAnimationFrame) return window.requestAnimationFrame(callback);
+      return window.setTimeout(callback, 16);
+    }
+
+    function cancelDragFrame(frame) {
+      if (window.cancelAnimationFrame) window.cancelAnimationFrame(frame);
+      else window.clearTimeout(frame);
     }
 
     function applyCardOrder() {
@@ -1340,7 +1489,438 @@
       cards.length = 0;
       for (i = 0; i < next.length; i++) cards.push(next[i]);
       for (i = 0; i < cards.length; i++) grid.appendChild(cards[i]);
-      layoutWorldGrid(grid, cards);
+      layoutWorldGrid(grid, cards, layoutWidths);
+    }
+
+    function orderWithMove(sourceKey, targetKey, after) {
+      var next = [];
+      var i;
+      for (i = 0; i < layoutOrder.length; i++) {
+        if (layoutOrder[i] !== sourceKey) next.push(layoutOrder[i]);
+      }
+      var targetIndex = next.indexOf(targetKey);
+      if (targetIndex < 0) return null;
+      next.splice(targetIndex + (after ? 1 : 0), 0, sourceKey);
+      return next;
+    }
+
+    function reorderChildren(container, orderedNodes, source) {
+      if (!source || orderedNodes.indexOf(source) === -1) {
+        for (var i = 0; i < orderedNodes.length; i++) container.appendChild(orderedNodes[i]);
+        return;
+      }
+      var sourceIndex = orderedNodes.indexOf(source);
+      for (var before = 0; before < sourceIndex; before++) {
+        container.insertBefore(orderedNodes[before], source);
+      }
+      for (var after = orderedNodes.length - 1; after > sourceIndex; after--) {
+        container.insertBefore(orderedNodes[after], source.nextSibling);
+      }
+    }
+
+    function updateLayoutLabels() {
+      for (var i = 0; i < layoutOrder.length; i++) {
+        var key = layoutOrder[i];
+        var item = layoutList.querySelector('[data-layout-key="' + key + '"]');
+        if (!item) continue;
+        var index = item.querySelector('.layout-item__index');
+        if (index) index.textContent = (i < 9 ? '0' : '') + (i + 1);
+      }
+    }
+
+    function applyListOrder() {
+      var orderedItems = [];
+      var i;
+      for (i = 0; i < layoutOrder.length; i++) {
+        var item = layoutList.querySelector('[data-layout-key="' + layoutOrder[i] + '"]');
+        if (item) orderedItems.push(item);
+      }
+      var current = layoutList.children;
+      var same = current.length === orderedItems.length;
+      for (i = 0; same && i < orderedItems.length; i++) {
+        if (current[i] !== orderedItems[i]) same = false;
+      }
+      if (!same) {
+        for (i = 0; i < orderedItems.length; i++) layoutList.appendChild(orderedItems[i]);
+      }
+      updateLayoutLabels();
+    }
+
+    function collectReorderNodes() {
+      var nodes = [];
+      var i;
+      for (i = 0; i < cards.length; i++) nodes.push(cards[i]);
+      for (i = 0; i < layoutList.children.length; i++) nodes.push(layoutList.children[i]);
+      return nodes;
+    }
+
+    function finishAnimations(nodes) {
+      for (var i = 0; i < nodes.length; i++) {
+        if (!nodes[i].getAnimations) continue;
+        var animations = nodes[i].getAnimations();
+        for (var a = 0; a < animations.length; a++) animations[a].finish();
+      }
+    }
+
+    function capturePositions(nodes) {
+      var positions = [];
+      for (var i = 0; i < nodes.length; i++) {
+        positions.push({ node: nodes[i], rect: nodes[i].getBoundingClientRect() });
+      }
+      return positions;
+    }
+
+    function animatePositions(positions) {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      for (var i = 0; i < positions.length; i++) {
+        var node = positions[i].node;
+        if (node === dragSourceNode || !node.isConnected || !node.animate) continue;
+        var after = node.getBoundingClientRect();
+        var dx = positions[i].rect.left - after.left;
+        var dy = positions[i].rect.top - after.top;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
+        node.animate([
+          { transform: 'translate(' + dx + 'px, ' + dy + 'px)' },
+          { transform: 'translate(0, 0)' }
+        ], { duration: 240, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' });
+      }
+    }
+
+    function previewReorder(sourceKey, targetKey, after) {
+      var next = orderWithMove(sourceKey, targetKey, after);
+      if (!next || next.join('\u0000') === layoutOrder.join('\u0000')) return;
+      var scrollX = window.scrollX;
+      var scrollY = window.scrollY;
+      var reorderNodes = collectReorderNodes();
+      finishAnimations(reorderNodes);
+      var previousPositions = capturePositions(reorderNodes);
+      layoutOrder = next;
+
+      var orderedCards = [];
+      var i;
+      for (i = 0; i < layoutOrder.length; i++) orderedCards.push(cardMap[layoutOrder[i]]);
+      cards.length = 0;
+      for (i = 0; i < orderedCards.length; i++) cards.push(orderedCards[i]);
+      reorderChildren(grid, orderedCards, dragSourceNode);
+
+      var orderedItems = [];
+      for (i = 0; i < layoutOrder.length; i++) {
+        var item = layoutList.querySelector('[data-layout-key="' + layoutOrder[i] + '"]');
+        if (item) orderedItems.push(item);
+      }
+      reorderChildren(layoutList, orderedItems, dragSourceNode);
+      updateLayoutLabels();
+      layoutWorldGrid(grid, cards, layoutWidths);
+      if (window.scrollX !== scrollX || window.scrollY !== scrollY) {
+        window.scrollTo(scrollX, scrollY);
+      }
+      animatePositions(previousPositions);
+    }
+
+    function savePreview() {
+      if (!dragStartOrder) return;
+      if (layoutOrder.join('\u0000') === dragStartOrder.join('\u0000')) return;
+      saveWorldLayout(layoutOrder);
+      layoutStatus.textContent = t('layout.saved');
+    }
+
+    function stopAutoScroll() {
+      if (autoScrollFrame) cancelDragFrame(autoScrollFrame);
+      autoScrollFrame = 0;
+    }
+
+    function autoScrollStep() {
+      autoScrollFrame = 0;
+      if (!dragKey) return;
+      var delta = 0;
+      if (dragPointerY > 0 && dragPointerY < AUTO_SCROLL_EDGE) {
+        delta = -Math.max(2, Math.ceil((1 - dragPointerY / AUTO_SCROLL_EDGE) * AUTO_SCROLL_MAX));
+      } else if (dragPointerY > window.innerHeight - AUTO_SCROLL_EDGE) {
+        var distance = Math.max(0, window.innerHeight - dragPointerY);
+        delta = Math.max(2, Math.ceil((1 - distance / AUTO_SCROLL_EDGE) * AUTO_SCROLL_MAX));
+      }
+      if (delta) {
+        var before = window.scrollY;
+        window.scrollBy(0, delta);
+        if (window.scrollY !== before) previewAtPoint();
+      }
+      autoScrollFrame = requestDragFrame(autoScrollStep);
+    }
+
+    function startAutoScroll() {
+      if (!dragKey || autoScrollFrame) return;
+      autoScrollFrame = requestDragFrame(autoScrollStep);
+    }
+
+    function previewAtPoint() {
+      if (!dragKey) return;
+      var hits = document.elementsFromPoint
+        ? document.elementsFromPoint(dragPointerX, dragPointerY)
+        : [document.elementFromPoint(dragPointerX, dragPointerY)];
+      var target = null;
+      for (var hi = 0; hi < hits.length; hi++) {
+        if (!hits[hi] || !hits[hi].closest) continue;
+        var candidate = hits[hi].closest('[data-module-key], [data-layout-key]');
+        if (!candidate) continue;
+        var candidateKey = candidate.getAttribute('data-module-key') || candidate.getAttribute('data-layout-key');
+        if (candidateKey && candidateKey !== dragKey) {
+          target = candidate;
+          break;
+        }
+      }
+      if (!target) return;
+      var key = target.getAttribute('data-module-key') || target.getAttribute('data-layout-key');
+      var rect = target.getBoundingClientRect();
+      var isList = target.classList.contains('layout-item');
+      var after = isList
+        ? dragPointerX > rect.left + rect.width / 2
+        : dragPointerY > rect.top + rect.height / 2;
+      previewReorder(dragKey, key, after);
+    }
+
+    function startDragState(key, node, clientX, clientY) {
+      dragKey = key;
+      dragStartOrder = layoutOrder.slice();
+      dragSourceNode = node;
+      dragPointerX = isFinite(clientX) ? clientX : 0;
+      dragPointerY = isFinite(clientY) ? clientY : 0;
+      node.classList.add('is-dragging');
+    }
+
+    function endDrag(commit) {
+      if (!dragKey && !pointerDragCleanup) return;
+      if (commit) savePreview();
+      if (pointerDragCleanup) {
+        var cleanup = pointerDragCleanup;
+        pointerDragCleanup = null;
+        cleanup();
+      }
+      stopAutoScroll();
+      var dragging = document.querySelectorAll('.is-dragging');
+      for (var i = 0; i < dragging.length; i++) dragging[i].classList.remove('is-dragging');
+      var changed = dragStartOrder && layoutOrder.join('\u0000') !== dragStartOrder.join('\u0000');
+      if (!commit && changed) {
+        layoutOrder = dragStartOrder.slice();
+        applyCardOrder();
+        layoutStatus.textContent = t('layout.cancelled');
+      }
+      dragKey = null;
+      dragStartOrder = null;
+      dragSourceNode = null;
+      if (editorOpen) applyListOrder();
+    }
+
+    function beginDrag(event, key, node) {
+      if (!editorOpen || dragKey) {
+        event.preventDefault();
+        return;
+      }
+      startDragState(key, node, event.clientX, event.clientY);
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', key);
+      }
+    }
+
+    function markDrop(event, node, key) {
+      if (!editorOpen || !dragKey || key === dragKey) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+      dragPointerX = isFinite(event.clientX) ? event.clientX : dragPointerX;
+      dragPointerY = isFinite(event.clientY) ? event.clientY : dragPointerY;
+      startAutoScroll();
+      var rect = node.getBoundingClientRect();
+      var isList = node.classList.contains('layout-item');
+      var after = isList
+        ? event.clientX > rect.left + rect.width / 2
+        : event.clientY > rect.top + rect.height / 2;
+      previewReorder(dragKey, key, after);
+    }
+
+    function dropOn(event, node, key) {
+      if (!editorOpen || !dragKey) return;
+      event.preventDefault();
+      if (key !== dragKey) {
+        var rect = node.getBoundingClientRect();
+        var isList = node.classList.contains('layout-item');
+        var after = isList
+          ? event.clientX > rect.left + rect.width / 2
+          : event.clientY > rect.top + rect.height / 2;
+        previewReorder(dragKey, key, after);
+      }
+      endDrag(true);
+    }
+
+    function startPointerDrag(event, key, node, handle) {
+      if (!editorOpen || dragKey || event.pointerType === 'mouse' || event.button !== 0) return;
+      event.preventDefault();
+      startDragState(key, node, event.clientX, event.clientY);
+      var pointerId = event.pointerId;
+      var rect = node.getBoundingClientRect();
+      var offsetX = event.clientX - rect.left;
+      var offsetY = event.clientY - rect.top;
+      var dragX = 0;
+      var dragY = 0;
+      node.classList.add('is-lifted');
+      node.style.position = 'relative';
+      node.style.zIndex = '1000';
+      node.style.transition = 'none';
+      node.style.transform = 'translate(0, 0)';
+      node.draggable = false;
+      var handleWasDraggable = handle.draggable;
+      handle.draggable = false;
+      try { handle.setPointerCapture(pointerId); } catch (error) { /* synthetic pointer */ }
+
+      function onMove(moveEvent) {
+        if (moveEvent.pointerId !== pointerId) return;
+        moveEvent.preventDefault();
+        dragPointerX = moveEvent.clientX;
+        dragPointerY = moveEvent.clientY;
+        var current = node.getBoundingClientRect();
+        var baseLeft = current.left - dragX;
+        var baseTop = current.top - dragY;
+        dragX = moveEvent.clientX - offsetX - baseLeft;
+        dragY = moveEvent.clientY - offsetY - baseTop;
+        node.style.transform = 'translate(' + dragX + 'px, ' + dragY + 'px)';
+        startAutoScroll();
+        previewAtPoint();
+      }
+
+      function onEnd(endEvent) {
+        if (endEvent.pointerId !== pointerId) return;
+        endDrag(true);
+      }
+
+      function onCancel(cancelEvent) {
+        if (cancelEvent.pointerId !== pointerId) return;
+        endDrag(false);
+      }
+
+      pointerDragCleanup = function () {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onEnd);
+        document.removeEventListener('pointercancel', onCancel);
+        node.classList.remove('is-lifted');
+        node.style.position = '';
+        node.style.zIndex = '';
+        node.style.transition = '';
+        node.style.transform = '';
+        handle.draggable = handleWasDraggable;
+        node.draggable = editorOpen;
+      };
+      document.addEventListener('pointermove', onMove, { passive: false });
+      document.addEventListener('pointerup', onEnd);
+      document.addEventListener('pointercancel', onCancel);
+    }
+
+    function onDocumentDragOver(event) {
+      if (!dragKey) return;
+      dragPointerX = isFinite(event.clientX) ? event.clientX : dragPointerX;
+      dragPointerY = isFinite(event.clientY) ? event.clientY : dragPointerY;
+      startAutoScroll();
+    }
+
+    function onDragKeyDown(event) {
+      if (event.key === 'Escape' && dragKey) {
+        event.preventDefault();
+        endDrag(false);
+      }
+    }
+
+    function keyboardReorder(event, key) {
+      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      event.preventDefault();
+      var delta = event.key === 'ArrowUp' ? -1 : 1;
+      moveModule(key, delta);
+      var item = layoutList.querySelector('[data-layout-key="' + key + '"]');
+      if (item) window.setTimeout(function () { item.focus({ preventScroll: true }); }, 0);
+    }
+
+    function addModuleHandle(key, node) {
+      var name = t(moduleByKey[key].labelKey);
+      var handle = el('button', {
+        class: 'module-drag-handle',
+        type: 'button',
+        'aria-label': t('layout.dragHandle', { name: name }),
+        'aria-describedby': 'layout-hint',
+        title: t('layout.dragHandle', { name: name })
+      }, [icon('drag')]);
+      handle.draggable = true;
+      handle.addEventListener('pointerdown', function (event) {
+        startPointerDrag(event, key, node, handle);
+      });
+      handle.addEventListener('keydown', function (event) {
+        keyboardReorder(event, key);
+      });
+      node.insertBefore(handle, node.firstChild);
+    }
+
+    function bindCardDrag(key, node) {
+      if (node.dataset.dragBound === '1') return;
+      node.dataset.dragBound = '1';
+      node.addEventListener('dragstart', function (event) { beginDrag(event, key, node); });
+      node.addEventListener('dragend', function () { endDrag(true); });
+      node.addEventListener('dragover', function (event) { markDrop(event, node, key); });
+      node.addEventListener('drop', function (event) { dropOn(event, node, key); });
+    }
+
+    function syncModuleEditing() {
+      document.documentElement.classList.toggle('layout-editing', editorOpen);
+      for (var i = 0; i < layoutOrder.length; i++) {
+        var key = layoutOrder[i];
+        var node = cardMap[key];
+        if (!node) continue;
+        node.draggable = editorOpen;
+        node.classList.toggle('module--editing', editorOpen);
+        var handle = node.querySelector('.module-drag-handle');
+        if (!editorOpen) {
+          if (handle && handle.parentNode) handle.parentNode.removeChild(handle);
+          node.classList.remove('is-dragging');
+          continue;
+        }
+        bindCardDrag(key, node);
+        if (!handle) addModuleHandle(key, node);
+      }
+    }
+
+    function setEditorOpen(open) {
+      editorOpen = Boolean(open);
+      layoutEditor.hidden = !editorOpen;
+      layoutButton.setAttribute('aria-expanded', String(editorOpen));
+      if (!editorOpen) {
+        endDrag(true);
+        layoutButton.focus({ preventScroll: true });
+      }
+      syncModuleEditing();
+    }
+
+    function changeLayoutWidth(key, value) {
+      var module = moduleByKey[key];
+      if (!module) return;
+      var previous = layoutWidths[key] || 'auto';
+      if (String(previous) === String(value)) return;
+      var nodes = collectReorderNodes();
+      finishAnimations(nodes);
+      var previousPositions = capturePositions(nodes);
+      if (value === 'auto') {
+        delete layoutWidths[key];
+      } else {
+        var width = parseInt(value, 10);
+        if (supportedWorldWidths(module).indexOf(width) === -1) return;
+        layoutWidths[key] = width;
+      }
+      saveWorldWidths(layoutWidths);
+      layoutWorldGrid(grid, cards, layoutWidths);
+      animatePositions(previousPositions);
+      layoutStatus.textContent = t('layout.saved');
+    }
+
+    function widthOptionLabel(width) {
+      if (width === 4) return t('layout.widthThird');
+      if (width === 6) return t('layout.widthHalf');
+      if (width === 8) return t('layout.widthTwoThirds');
+      if (width === 12) return t('layout.widthFull');
+      return String(width);
     }
 
     function renderLayoutEditor() {
@@ -1349,30 +1929,58 @@
         (function (key, index) {
           var module = moduleByKey[key];
           var name = t(module.labelKey);
-          var up = el('button', {
-            class: 'layout-move',
-            type: 'button',
-            text: '↑',
-            'aria-label': t('layout.moveUp', { name: name }),
-            disabled: index === 0
+          var grip = el('span', { class: 'layout-item__grip', 'aria-hidden': 'true' }, [icon('drag')]);
+          var widthOptions = [el('option', { value: 'auto', text: t('layout.widthAuto') })];
+          var widths = supportedWorldWidths(module);
+          for (var wi = 0; wi < widths.length; wi++) {
+            widthOptions.push(el('option', {
+              value: String(widths[wi]),
+              text: widthOptionLabel(widths[wi])
+            }));
+          }
+          var widthSelect = el('select', {
+            class: 'layout-width__select',
+            'aria-label': t('layout.widthFor', { name: name })
+          }, widthOptions);
+          widthSelect.value = layoutWidths[key] ? String(layoutWidths[key]) : 'auto';
+          widthSelect.draggable = false;
+          widthSelect.addEventListener('change', function () {
+            changeLayoutWidth(key, widthSelect.value);
           });
-          var down = el('button', {
-            class: 'layout-move',
-            type: 'button',
-            text: '↓',
-            'aria-label': t('layout.moveDown', { name: name }),
-            disabled: index === layoutOrder.length - 1
-          });
-          up.addEventListener('click', function () { moveModule(key, -1); });
-          down.addEventListener('click', function () { moveModule(key, 1); });
-          layoutList.appendChild(el('li', {
+          widthSelect.addEventListener('dragstart', function (event) { event.preventDefault(); });
+          var widthLabel = el('label', { class: 'layout-width' }, [
+            el('span', { class: 'visually-hidden', text: t('layout.widthFor', { name: name }) }),
+            widthSelect
+          ]);
+          var item = el('li', {
             class: 'layout-item',
-            'data-layout-key': key
+            'data-layout-key': key,
+            tabindex: 0,
+            'aria-label': name,
+            'aria-describedby': 'layout-hint'
           }, [
+            grip,
             el('span', { class: 'layout-item__index', text: (index < 9 ? '0' : '') + (index + 1) }),
             el('span', { class: 'layout-item__name', text: name }),
-            el('span', { class: 'layout-item__actions' }, [up, down])
-          ]));
+            widthLabel
+          ]);
+          item.draggable = true;
+          grip.draggable = false;
+          grip.addEventListener('pointerdown', function (event) {
+            startPointerDrag(event, key, item, grip);
+          });
+          item.addEventListener('dragstart', function (event) {
+            if (event.target.closest && event.target.closest('.layout-width')) {
+              event.preventDefault();
+              return;
+            }
+            beginDrag(event, key, item);
+          });
+          item.addEventListener('dragend', function () { endDrag(true); });
+          item.addEventListener('dragover', function (event) { markDrop(event, item, key); });
+          item.addEventListener('drop', function (event) { dropOn(event, item, key); });
+          item.addEventListener('keydown', function (event) { keyboardReorder(event, key); });
+          layoutList.appendChild(item);
         }(layoutOrder[i], i));
       }
     }
@@ -1381,22 +1989,35 @@
       var index = layoutOrder.indexOf(key);
       var target = index + delta;
       if (index < 0 || target < 0 || target >= layoutOrder.length) return;
+      var reorderNodes = collectReorderNodes();
+      finishAnimations(reorderNodes);
+      var previousPositions = capturePositions(reorderNodes);
       var swap = layoutOrder[index];
       layoutOrder[index] = layoutOrder[target];
       layoutOrder[target] = swap;
       saveWorldLayout(layoutOrder);
       applyCardOrder();
-      renderLayoutEditor();
+      applyListOrder();
+      animatePositions(previousPositions);
       layoutStatus.textContent = t('layout.saved');
-      var moved = layoutList.querySelector('.layout-item[data-layout-key="' + key + '"] .layout-move:not([disabled])');
+      var moved = layoutList.querySelector('.layout-item[data-layout-key="' + key + '"]');
       if (moved) moved.focus({ preventScroll: true });
     }
 
     function resetLayout() {
+      endDrag(false);
+      var reorderNodes = collectReorderNodes();
+      finishAnimations(reorderNodes);
+      var previousPositions = capturePositions(reorderNodes);
       layoutOrder = DEFAULT_WORLD_LAYOUT.slice();
+      layoutWidths = {};
       saveWorldLayout(layoutOrder);
+      saveWorldWidths(layoutWidths);
       applyCardOrder();
-      renderLayoutEditor();
+      applyListOrder();
+      animatePositions(previousPositions);
+      var selects = layoutList.querySelectorAll('.layout-width__select');
+      for (var i = 0; i < selects.length; i++) selects[i].value = 'auto';
       layoutStatus.textContent = t('layout.saved');
     }
 
@@ -1405,7 +2026,10 @@
     });
     closeLayoutButton.addEventListener('click', function () { setEditorOpen(false); });
     resetLayoutButton.addEventListener('click', resetLayout);
+    document.addEventListener('dragover', onDocumentDragOver);
+    document.addEventListener('keydown', onDragKeyDown);
     renderLayoutEditor();
+    syncModuleEditing();
 
     var footnote = el('p', { class: 'world-footnote', text: t('world.tzNote') });
     var wrapper = el('div', {}, [header, layoutEditor, grid, footnote]);
@@ -1426,7 +2050,7 @@
       if (layoutFrame) cancelFrame(layoutFrame);
       layoutFrame = requestFrame(function () {
         layoutFrame = 0;
-        if (!disposed) layoutWorldGrid(grid, cards);
+        if (!disposed) layoutWorldGrid(grid, cards, layoutWidths);
       });
     }
     function onResize() { scheduleLayout(); }
@@ -1453,12 +2077,21 @@
     return {
       node: wrapper,
       tick: tick,
-      layout: function () { layoutWorldGrid(grid, cards); },
+      layout: function () { layoutWorldGrid(grid, cards, layoutWidths); },
       cleanup: function () {
         disposed = true;
         window.clearInterval(timer);
         window.removeEventListener('resize', onResize);
         document.removeEventListener('visibilitychange', onVisibility);
+        document.removeEventListener('dragover', onDocumentDragOver);
+        document.removeEventListener('keydown', onDragKeyDown);
+        if (pointerDragCleanup) {
+          var cleanupDrag = pointerDragCleanup;
+          pointerDragCleanup = null;
+          cleanupDrag();
+        }
+        stopAutoScroll();
+        document.documentElement.classList.remove('layout-editing');
         if (layoutFrame) cancelFrame(layoutFrame);
       }
     };

@@ -566,6 +566,9 @@ svg {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
   gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .layout-item {
@@ -577,6 +580,29 @@ svg {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--panel);
+  cursor: grab;
+}
+
+.layout-item.is-dragging:not(.is-lifted) {
+  opacity: 0.45;
+}
+
+.layout-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.layout-item__grip {
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  min-height: 1.8rem;
+  flex: none;
+  color: var(--text-faint);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .layout-item__index {
@@ -597,34 +623,29 @@ svg {
   font-weight: 700;
 }
 
-.layout-item__actions {
+.layout-width {
   display: flex;
+  align-items: center;
   flex: none;
-  gap: 4px;
+  margin-left: auto;
 }
 
-.layout-move {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  padding: 0;
+.layout-width__select {
+  min-height: 28px;
+  max-width: 5rem;
+  padding: 3px 6px;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--panel-soft);
   color: var(--text);
-  font-size: 0.9rem;
-  line-height: 1;
+  font: inherit;
+  font-size: 0.76rem;
+  line-height: 1.3;
 }
 
-.layout-move:not(:disabled):hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.layout-move:disabled {
-  opacity: 0.35;
-  cursor: default;
+.layout-width__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .layout-status {
@@ -632,6 +653,62 @@ svg {
   margin-top: 8px;
   color: var(--accent);
   font-size: 0.76rem;
+}
+
+html.layout-editing {
+  scroll-behavior: auto;
+  overflow-anchor: none;
+  overflow-x: clip;
+}
+
+.card.module--editing {
+  outline: 1px dashed var(--border-strong);
+  outline-offset: 4px;
+}
+
+.card.is-dragging:not(.is-lifted) {
+  opacity: 0.45;
+}
+
+.card.is-lifted,
+.layout-item.is-lifted {
+  z-index: 1000;
+  box-shadow: 0 18px 45px rgb(0 0 0 / 35%);
+  opacity: 0.96;
+  cursor: grabbing;
+  will-change: transform;
+}
+
+.module-drag-handle {
+  position: absolute;
+  z-index: 5;
+  top: -10px;
+  right: -10px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 7px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  box-shadow: var(--shadow);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.module-drag-handle:hover,
+.module-drag-handle:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.module-drag-handle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .world-grid {
@@ -657,6 +734,7 @@ svg {
 }
 
 .card {
+  position: relative;
   min-width: 0;
   padding: 20px;
   border: 1px solid var(--border);
@@ -741,14 +819,6 @@ svg {
 
 .muted {
   color: var(--text-muted);
-}
-
-.faint {
-  color: var(--text-faint);
-}
-
-.tiny {
-  font-size: 0.76rem;
 }
 
 /* ---------------------------------------------------------------
@@ -862,30 +932,6 @@ svg {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-}
-
-.phase-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  margin-top: 14px;
-  color: var(--text-faint);
-  font-size: 0.76rem;
-}
-
-.phase-list span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.phase-list i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  font-style: normal;
-  opacity: 0.7;
 }
 
 /* ---------------------------------------------------------------
@@ -1668,10 +1714,6 @@ noscript p {
     padding: 13px 0;
   }
 
-  .brand__tagline {
-    display: none;
-  }
-
   .header__controls {
     width: 100%;
     justify-content: space-between;
@@ -1773,15 +1815,12 @@ noscript p {
   .card,
   .chip,
   .tag,
-  .search input,
   .switch-group,
-  .search-results,
   .tool-card,
   .feature-card {
     border-color: CanvasText;
   }
 
-  .live-dot,
   .daybar__marker,
   .daybar__marker::before {
     background: Highlight;
@@ -1790,7 +1829,6 @@ noscript p {
   .brand__mark,
   .avatar,
   .weather-icon,
-  .search-result__icon,
   .tool-card__icon,
   .feature-card__icon {
     border-color: CanvasText;
@@ -1800,7 +1838,6 @@ noscript p {
 @media print {
   .site-header,
   .site-footer,
-  .search,
   .site-nav {
     display: none;
   }

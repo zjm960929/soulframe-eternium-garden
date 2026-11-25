@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 ![Soulframe Eternium Garden home page](assets/img/readme-home.png)
 
-A bilingual, offline-friendly Soulframe utility hub. Version **v0.1.2** ships the **World State** page: Midrath's clock, weather, Zenith's daily wares, and the Blessed Meeting.
+A bilingual, offline-friendly Soulframe utility hub. Version **v0.1.3** ships the **World State** page: Midrath's clock, weather, Zenith's daily wares, and the Blessed Meeting.
 
 - Live site: <https://zjm960929.github.io/soulframe-eternium-garden/>
 - Source: <https://github.com/zjm960929/soulframe-eternium-garden>
@@ -83,7 +83,7 @@ Everything is a pure function of UTC time and changes at 00:00 UTC. Clocks and c
 
 ### Custom module order
 
-The World State page has a **Customize order** panel. Move the four modules with the up/down buttons; the order is stored in local storage under `sf-eg-world-layout` and can be reset. After a move, the masonry layout, DOM order, visual order, and keyboard Tab order all follow the new sequence.
+The World State page has a **Custom layout** panel. Drag cards or list items to reorder them, with mouse, touch, and keyboard `Alt + Arrow Up/Down` support. The width menu on the right offers `Auto / 1/3 / 1/2 / 2/3 / Full` according to each module's supported range and is stored in `sf-eg-world-layout-widths`; viewports at or below 900px always use full width. Other modules shift into place with a 240ms FLIP animation, skipped under `prefers-reduced-motion`; the dragged node stays the same DOM element. The order is stored in local storage under `sf-eg-world-layout` and can be reset together with widths. After a move, the masonry layout, DOM order, visual order, and keyboard Tab order all follow the new sequence.
 
 ### Measured masonry
 
@@ -229,4 +229,4 @@ MIT covers the source code only. Soulframe game names, data, portraits, and othe
 
 ## Version
 
-Current version: **0.1.2**. See [CHANGELOG.md](CHANGELOG.md) for the release history.
+Current version: **0.1.3**. See [CHANGELOG.md](CHANGELOG.md) for the release history.

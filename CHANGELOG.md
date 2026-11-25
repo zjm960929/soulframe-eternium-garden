@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.3 - 2026-11-26
+
+### Added
+
+- Drag-and-drop reordering for World State modules and the layout list, with mouse, touch, and keyboard `Alt + Arrow` support.
+- Per-module width menus (`Auto / 1/3 / 1/2 / 2/3 / Full`) stored in `sf-eg-world-layout-widths`, with a width-aware skyline layout.
+
+### Changed
+
+- Removed the up/down arrow buttons; the whole layout row or module is draggable.
+- Other modules animate to their new positions with a 240ms FLIP transition, skipped under `prefers-reduced-motion`.
+- The dragged node stays in the DOM; no duplicate drag clone is created.
+- Removed 40 unused UI strings and obsolete CSS selectors; audited assets, duplicates, temporary files, and runtime errors.
+
 ## 0.1.2 - 2026-11-26
 
 ### Changed

@@ -16,7 +16,7 @@ const GITHUB = 'https://github.com/zjm960929/soulframe-eternium-garden';
 const EMAIL = 'mailto:zjm960929@outlook.com';
 
 test('release metadata is present', () => {
-  assert.equal(pkg.version, '0.1.2');
+  assert.equal(pkg.version, '0.1.3');
   assert.equal(pkg.private, true);
   assert.equal(pkg.license, 'MIT');
   assert.equal(pkg.engines.node, '>=20');
@@ -87,9 +87,22 @@ test('language and theme controls are segmented switches', () => {
   assert.equal((html.match(/data-theme=/g) || []).length, 3);
 });
 
+test('layout editor uses drag handles instead of arrow buttons', () => {
+  assert.ok(!app.includes('layout-move'), 'arrow buttons must not remain');
+  assert.ok(app.includes('module-drag-handle'), 'missing module drag handle');
+  assert.ok(app.includes('is-lifted'), 'missing lifted drag state');
+  assert.ok(app.includes('animatePositions'), 'missing FLIP helper');
+});
+
+test('layout editor exposes per-module width controls', () => {
+  assert.ok(app.includes("WORLD_WIDTH_KEY = 'sf-eg-world-layout-widths'"));
+  assert.ok(app.includes('layout-width__select'));
+  assert.ok(app.includes('layoutWorldGridWidths'));
+});
+
 test('README no longer claims the project is unpublished', () => {
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.ok(!readme.includes('尚未发布到 GitHub'));
-  assert.ok(readme.includes('v0.1.2'));
+  assert.ok(readme.includes('v0.1.3'));
   assert.ok(readme.includes('NOTICE.md'));
 });
