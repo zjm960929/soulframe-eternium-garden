@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Local tooling and caches
+.cache/
+.npm-cache/
+coverage/
+*.log
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Local environment files
+.env
+.env.*
