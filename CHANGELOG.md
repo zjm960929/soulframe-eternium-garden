@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.2 - 2026-11-26
+
+### Changed
+
+- Replaced the header language and theme dropdowns with segmented switch controls.
+- Language now sits on the left and theme on the right; both keep their existing persistence and accessibility labels.
+- Refreshed the README screenshot and listed the switch behavior in both README versions.
+
 ## 0.1.1 - 2026-11-26
 
 ### Added

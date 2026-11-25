@@ -22,8 +22,8 @@
   var DEFAULT_WORLD_LAYOUT = WORLD_MODULES.map(function (module) { return module.key; });
 
   var main = document.getElementById('main');
-  var langSelect = document.getElementById('lang-select');
-  var themeSelect = document.getElementById('theme-select');
+  var langSwitch = document.getElementById('language-switch');
+  var themeSwitch = document.getElementById('theme-switch');
 
   var state = {
     lang: 'zh',
@@ -390,15 +390,36 @@
       ariaNodes[ai].setAttribute('aria-label', t(ariaNodes[ai].getAttribute('data-i18n-aria-label')));
     }
     document.documentElement.lang = state.lang === 'zh' ? 'zh-CN' : 'en';
-    if (langSelect) {
-      langSelect.value = state.lang;
-      langSelect.setAttribute('aria-label', t('controls.language'));
-    }
-    if (themeSelect) themeSelect.setAttribute('aria-label', t('controls.theme'));
+    syncControls();
     var brand = document.querySelector('.brand');
     if (brand) brand.setAttribute('aria-label', t('app.name'));
     var nav = document.getElementById('site-nav');
     if (nav) nav.setAttribute('aria-label', t('nav.label'));
+  }
+
+  function syncLanguageSwitch() {
+    if (!langSwitch) return;
+    var buttons = langSwitch.querySelectorAll('[data-lang]');
+    for (var i = 0; i < buttons.length; i++) {
+      var active = buttons[i].getAttribute('data-lang') === state.lang;
+      buttons[i].classList.toggle('is-active', active);
+      buttons[i].setAttribute('aria-pressed', String(active));
+    }
+  }
+
+  function syncThemeSwitch(theme) {
+    if (!themeSwitch) return;
+    var buttons = themeSwitch.querySelectorAll('[data-theme]');
+    for (var i = 0; i < buttons.length; i++) {
+      var active = buttons[i].getAttribute('data-theme') === theme;
+      buttons[i].classList.toggle('is-active', active);
+      buttons[i].setAttribute('aria-pressed', String(active));
+    }
+  }
+
+  function syncControls() {
+    syncLanguageSwitch();
+    syncThemeSwitch(currentTheme());
   }
 
   function currentTheme() {
@@ -412,7 +433,7 @@
     if (theme !== 'light' && theme !== 'dark') theme = 'auto';
     if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
     else document.documentElement.setAttribute('data-theme', theme);
-    if (themeSelect) themeSelect.value = theme;
+    syncThemeSwitch(theme);
     var meta = document.querySelector('meta[name="color-scheme"]');
     if (meta) meta.setAttribute('content', theme === 'auto' ? 'light dark' : theme);
     if (persist !== false) {
@@ -1475,14 +1496,20 @@
     state.lang = detectLang();
     applyStaticTranslations();
 
-    if (themeSelect) {
-      themeSelect.addEventListener('change', function () {
+    if (themeSwitch) {
+      themeSwitch.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-theme]');
+        if (!button || !themeSwitch.contains(button)) return;
         removeQueryParam('theme');
-        applyTheme(themeSelect.value, true);
+        applyTheme(button.getAttribute('data-theme'), true);
       });
     }
-    if (langSelect) {
-      langSelect.addEventListener('change', function () { setLanguage(langSelect.value); });
+    if (langSwitch) {
+      langSwitch.addEventListener('click', function (event) {
+        var button = event.target.closest('[data-lang]');
+        if (!button || !langSwitch.contains(button)) return;
+        setLanguage(button.getAttribute('data-lang'));
+      });
     }
 
     window.addEventListener('hashchange', function () { renderRoute({ focus: true }); });

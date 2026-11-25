@@ -4,11 +4,12 @@ English | [中文](README.zh.md)
 
 ![Soulframe Eternium Garden home page](assets/img/readme-home.png)
 
-A bilingual, offline-friendly Soulframe utility hub. Version **v0.1.1** ships the **World State** page: Midrath's clock, weather, Zenith's daily wares, and the Blessed Meeting.
+A bilingual, offline-friendly Soulframe utility hub. Version **v0.1.2** ships the **World State** page: Midrath's clock, weather, Zenith's daily wares, and the Blessed Meeting.
 
 - Live site: <https://zjm960929.github.io/soulframe-eternium-garden/>
 - Source: <https://github.com/zjm960929/soulframe-eternium-garden>
 - Latest release: <https://github.com/zjm960929/soulframe-eternium-garden/releases>
+- Header language and theme controls are segmented switches, not dropdowns.
 
 ## Contents
 
@@ -228,4 +229,4 @@ MIT covers the source code only. Soulframe game names, data, portraits, and othe
 
 ## Version
 
-Current version: **0.1.1**. See [CHANGELOG.md](CHANGELOG.md) for the release history.
+Current version: **0.1.2**. See [CHANGELOG.md](CHANGELOG.md) for the release history.

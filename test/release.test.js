@@ -16,7 +16,7 @@ const GITHUB = 'https://github.com/zjm960929/soulframe-eternium-garden';
 const EMAIL = 'mailto:zjm960929@outlook.com';
 
 test('release metadata is present', () => {
-  assert.equal(pkg.version, '0.1.1');
+  assert.equal(pkg.version, '0.1.2');
   assert.equal(pkg.private, true);
   assert.equal(pkg.license, 'MIT');
   assert.equal(pkg.engines.node, '>=20');
@@ -75,9 +75,21 @@ test('social profile URLs are exact', () => {
   assert.ok(!app.includes('PKhiUbxkvFSE'), 'home Douyin URL still has the old casing');
 });
 
+test('language and theme controls are segmented switches', () => {
+  assert.ok(!html.includes('<select'), 'select controls must not remain');
+  assert.ok(html.includes('id="language-switch"'), 'missing language switch');
+  assert.ok(html.includes('id="theme-switch"'), 'missing theme switch');
+  assert.ok(
+    html.indexOf('id="language-switch"') < html.indexOf('id="theme-switch"'),
+    'language switch must appear before theme switch'
+  );
+  assert.equal((html.match(/data-lang=/g) || []).length, 2);
+  assert.equal((html.match(/data-theme=/g) || []).length, 3);
+});
+
 test('README no longer claims the project is unpublished', () => {
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.ok(!readme.includes('尚未发布到 GitHub'));
-  assert.ok(readme.includes('v0.1.1'));
+  assert.ok(readme.includes('v0.1.2'));
   assert.ok(readme.includes('NOTICE.md'));
 });

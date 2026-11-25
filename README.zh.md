@@ -4,12 +4,13 @@
 
 ![Soulframe 永恒花园主页](assets/img/readme-home.png)
 
-一个双语、离线可用的 Soulframe 实用工具合集。当前版本 **v0.1.1**，完成 **世界状态** 页：密德拉的昼夜时间、天气、泽尼斯的每日商品，以及受祝福的会面。
+一个双语、离线可用的 Soulframe 实用工具合集。当前版本 **v0.1.2**，完成 **世界状态** 页：密德拉的昼夜时间、天气、泽尼斯的每日商品，以及受祝福的会面。
 
 中文版页面名称使用 **Soulframe 永恒花园**，英文版保持 **Soulframe Eternium Garden**。
 
 - 中文 / English 切换，语言选择保存在浏览器；也可用 `?lang=zh` / `?lang=en` 打开指定语言。
 - 明亮 / 黑暗 / 跟随系统三种主题；也可用 `?theme=light` / `?theme=dark` 打开指定主题。
+- 顶栏语言与主题使用分段开关，不再使用下拉选单。
 - 原生 HTML / CSS / JavaScript，无框架、无外部字体、无运行时依赖。
 - 直接双击 `index.html` 即可使用；也可以放在任意静态托管上。
 - 不请求游戏或第三方 API，断网也能推算世界状态。
@@ -231,4 +232,4 @@ MIT 仅覆盖源代码；Soulframe 游戏名称、数据、头像和其他游戏
 
 ## 版本
 
-当前版本 **0.1.1**。变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **0.1.2**。变更记录见 [CHANGELOG.md](CHANGELOG.md)。
