@@ -2,11 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## 0.1.1 - 2026-11-26
+
+### Added
+
+- GitHub project and email icons in the header and the home page social row.
+- Bilingual README pair: `README.md` (English) and `README.zh.md` (Chinese).
 
 ### Changed
 
 - World State header: removed the descriptive lede and the two status chips; local and UTC clocks now sit directly below the page heading.
+- Release documentation now follows the bilingual README structure.
 
 ## 0.1.0 - 2026-11-26
 

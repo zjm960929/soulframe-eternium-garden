@@ -11,9 +11,11 @@
       'nav.home': '主页',
       'nav.world': '世界状态',
 
-      'social.label': '社交主页',
+      'social.label': '社交与联系方式',
       'social.bilibili': '哔哩哔哩主页',
       'social.douyin': '抖音主页',
+      'social.github': 'GitHub 项目主页',
+      'social.email': '发送邮件',
 
       'controls.theme': '主题',
       'controls.language': '语言',
@@ -134,9 +136,11 @@
       'nav.home': 'Home',
       'nav.world': 'World State',
 
-      'social.label': 'Social profiles',
+      'social.label': 'Social and contact',
       'social.bilibili': 'Bilibili profile',
       'social.douyin': 'Douyin profile',
+      'social.github': 'GitHub repository',
+      'social.email': 'Send email',
 
       'controls.theme': 'Theme',
       'controls.language': 'Language',

@@ -12,17 +12,30 @@ const pkg = require('../package.json');
 
 const DOUYIN = 'https://www.douyin.com/user/MS4wLjABAAAAFIQ6-Ww8fODvrsOR2oFTtegpwDnpVq_PKHIUbxkvFSE';
 const BILIBILI = 'https://space.bilibili.com/16730771';
+const GITHUB = 'https://github.com/zjm960929/soulframe-eternium-garden';
+const EMAIL = 'mailto:zjm960929@outlook.com';
 
 test('release metadata is present', () => {
-  assert.equal(pkg.version, '0.1.0');
+  assert.equal(pkg.version, '0.1.1');
   assert.equal(pkg.private, true);
   assert.equal(pkg.license, 'MIT');
   assert.equal(pkg.engines.node, '>=20');
-  for (const file of ['.nojekyll', 'CHANGELOG.md', 'LICENSE', 'NOTICE.md', 'README.md']) {
+  for (const file of ['.nojekyll', 'CHANGELOG.md', 'LICENSE', 'NOTICE.md', 'README.md', 'README.zh.md']) {
     assert.ok(fs.existsSync(path.join(root, file)), `missing ${file}`);
   }
   assert.ok(fs.statSync(path.join(root, '.nojekyll')).isFile());
   assert.match(fs.readFileSync(path.join(root, 'LICENSE'), 'utf8'), /^MIT License/);
+});
+
+test('README files are a bilingual pair', () => {
+  const en = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+  const zh = fs.readFileSync(path.join(root, 'README.zh.md'), 'utf8');
+  assert.ok(en.startsWith('# Soulframe Eternium Garden'));
+  assert.ok(zh.startsWith('# Soulframe 永恒花园'));
+  assert.ok(en.includes('English | [中文](README.zh.md)'));
+  assert.ok(zh.includes('[English](README.md) | 中文'));
+  assert.ok(en.includes('## License'));
+  assert.ok(zh.includes('## 许可证'));
 });
 
 test('all local index.html asset references exist', () => {
@@ -53,14 +66,18 @@ test('ancestor avatars ship both 128 and 256 variants', () => {
 test('social profile URLs are exact', () => {
   assert.ok(html.includes(`href="${DOUYIN}"`), 'header Douyin URL mismatch');
   assert.ok(html.includes(`href="${BILIBILI}"`), 'header Bilibili URL mismatch');
+  assert.ok(html.includes(`href="${GITHUB}"`), 'header GitHub URL mismatch');
+  assert.ok(html.includes(`href="${EMAIL}"`), 'header email URL mismatch');
   assert.ok(app.includes(DOUYIN), 'home Douyin URL mismatch');
   assert.ok(app.includes(BILIBILI), 'home Bilibili URL mismatch');
+  assert.ok(app.includes(GITHUB), 'home GitHub URL mismatch');
+  assert.ok(app.includes(EMAIL), 'home email URL mismatch');
   assert.ok(!app.includes('PKhiUbxkvFSE'), 'home Douyin URL still has the old casing');
 });
 
 test('README no longer claims the project is unpublished', () => {
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.ok(!readme.includes('尚未发布到 GitHub'));
-  assert.ok(readme.includes('v0.1.0'));
+  assert.ok(readme.includes('v0.1.1'));
   assert.ok(readme.includes('NOTICE.md'));
 });
