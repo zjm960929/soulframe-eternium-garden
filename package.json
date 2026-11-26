@@ -1,8 +1,8 @@
 {
   "name": "soulframe-eternium-garden",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": true,
-  "description": "A bilingual, offline-friendly Soulframe utility hub with a deterministic world-state predictor.",
+  "description": "A bilingual, offline-friendly Soulframe utility hub with a deterministic world-state predictor and a Temper compendium.",
   "license": "MIT",
   "scripts": {
     "start": "node scripts/serve.js",

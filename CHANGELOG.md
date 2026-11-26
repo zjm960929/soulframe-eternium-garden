@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.4 - 2026-11-27
+
+### Added
+
+- Temper Compendium at #/temper with all 42 current Tempers, icons, origin frames, names, applicable weapon icons, and official descriptions.
+- Origin and applicable-weapon filters with combined filtering, empty state, and reset.
+- Six origin frames, six origin icons, eight combat-art icons, and 42 Temper icons.
+
+### Changed
+
+- Temper cards are compact and equal-sized, and use weapon-type icons with hover labels.
+- The site shell uses a fixed wide layout; the Temper grid uses the available screen width.
+- Home tool cards are 184px squares with icons above titles; the home group is vertically centered when space allows and stays fixed while filtering.
+- The native search clear button is suppressed in favor of the page clear control.
+- The header nav entry is now 淬炼大全; the World State eyebrow is now WORLDSTATE.
+- World State now uses #/live; legacy #/world is removed without a redirect and resolves to the not-found page.
+- The hidden #/more page and placeholder feature cards were removed; #/more resolves to the not-found page.
+
 ## 0.1.3 - 2026-11-26
 
 ### Added

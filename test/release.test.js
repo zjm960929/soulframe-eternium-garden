@@ -16,7 +16,7 @@ const GITHUB = 'https://github.com/zjm960929/soulframe-eternium-garden';
 const EMAIL = 'mailto:zjm960929@outlook.com';
 
 test('release metadata is present', () => {
-  assert.equal(pkg.version, '0.1.3');
+  assert.equal(pkg.version, '0.1.4');
   assert.equal(pkg.private, true);
   assert.equal(pkg.license, 'MIT');
   assert.equal(pkg.engines.node, '>=20');
@@ -87,6 +87,16 @@ test('language and theme controls are segmented switches', () => {
   assert.equal((html.match(/data-theme=/g) || []).length, 3);
 });
 
+test('world state route is live with no legacy alias', () => {
+  assert.ok(html.includes('href="#/live"'));
+  assert.ok(html.includes('data-route="live"'));
+  assert.ok(html.includes('href="#/temper"'));
+  assert.ok(html.includes('data-route="temper"'));
+  assert.ok(!html.includes('#/world'));
+  assert.ok(!app.includes("'#/world'"));
+  assert.ok(!app.includes("page === 'world'"));
+});
+
 test('layout editor uses drag handles instead of arrow buttons', () => {
   assert.ok(!app.includes('layout-move'), 'arrow buttons must not remain');
   assert.ok(app.includes('module-drag-handle'), 'missing module drag handle');
@@ -103,6 +113,6 @@ test('layout editor exposes per-module width controls', () => {
 test('README no longer claims the project is unpublished', () => {
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.ok(!readme.includes('尚未发布到 GitHub'));
-  assert.ok(readme.includes('v0.1.3'));
+  assert.ok(readme.includes('v0.1.4'));
   assert.ok(readme.includes('NOTICE.md'));
 });

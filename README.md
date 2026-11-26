@@ -4,7 +4,7 @@ English | [中文](README.zh.md)
 
 ![Soulframe Eternium Garden home page](assets/img/readme-home.png)
 
-A bilingual, offline-friendly Soulframe utility hub. Version **v0.1.3** ships the **World State** page: Midrath's clock, weather, Zenith's daily wares, and the Blessed Meeting.
+A bilingual, offline-friendly Soulframe utility hub. Version **v0.1.4** ships the **World State** page at `#/live` (Midrath's clock, weather, Zenith's daily wares, and the Blessed Meeting) and the **Temper Compendium** at `#/temper`.
 
 - Live site: <https://zjm960929.github.io/soulframe-eternium-garden/>
 - Source: <https://github.com/zjm960929/soulframe-eternium-garden>
@@ -70,7 +70,7 @@ The repository root is the static site and needs no build step.
 
 ### Home
 
-A centered title, Bilibili / Douyin / GitHub / email icons, and a search box. Search filters the tool cards by name, description, and bilingual keywords. Enter opens the first visible result, Escape clears the query, and `/` focuses the search field. Cards show only an icon and title; the only entries are **World State** and the non-interactive **More tools in development** placeholder. The footer reads **Powered by DeepSeek & ZJM**.
+A centered title, Bilibili / Douyin / GitHub / email icons, and a search box. Search filters the tool cards by name, description, and bilingual keywords. Enter opens the first visible result, Escape clears the query, and `/` focuses the search field. Cards are 184px squares with the icon above the title; the implemented entries are **World State**, **Temper Compendium**, and the non-interactive **More tools in development** placeholder. The hero and search group is vertically centered when space allows and stays fixed while results change; only the page’s own clear button is shown. The footer reads **Powered by DeepSeek & ZJM**.
 
 ### World State
 
@@ -80,6 +80,12 @@ A centered title, Bilibili / Douyin / GitHub / email icons, and a search box. Se
 - **Blessed Meeting**: today's ancestor, days until the next appearance, the next seven days, reset countdown, and a note about Graces and rotation. Portraits use official game assets: seven extracted from the Soulframe cache and a cropped, soft-edged Dale Seer portrait supplied by the project author.
 
 Everything is a pure function of UTC time and changes at 00:00 UTC. Clocks and countdowns update every second; crossing midnight redraws the day's data.
+
+### Temper Compendium
+
+![Temper Compendium page](assets/img/readme-temper.png)
+
+The **Temper Compendium** at `#/temper` lists all **42 current Tempers** with their icon, origin frame, Chinese and English names, origin icon, applicable weapon-type icons (labels appear on hover), and the official in-game description text. A filter bar above the cards filters by origin and applicable weapon, with a reset control. The page uses the available screen width with a wider card grid. Temper icons use the current wiki art; all six origin frames (including the universal `ItemBorder`), origin icons, and eight combat-art icons are extracted from the game cache. Descriptions come from the official localization table and the [Soulframe Wiki Tempers page](https://wiki.avakot.org/Tempers).
 
 ### Custom module order
 
@@ -95,9 +101,9 @@ The four World State modules use a 12-column grid with 8px rows rather than fixe
 - recompute after resize, font load, weather refresh, phase change, and tomorrow-preview expansion;
 - below 900px, fall back to a single CSS column without script intervention.
 
-### More tools
+### No More page
 
-Build simulation, materials and recipes, and an event calendar are reserved directions. The home page and header only expose a disabled **More tools in development** placeholder; no broken entries are shown.
+There is no More page and no `#/more` route. The home page and header keep a non-interactive **More tools in development** placeholder only; it has no feature cards and no broken link.
 
 ## Data and algorithms
 
@@ -116,6 +122,8 @@ Key implementation details:
 - Weather reproduction keeps every `Math.fround` rounding step and the `nativeFloor` / `Math.imul` order.
 - All calculations use UTC and convert to the browser's local timezone only for display.
 - No game or third-party API is requested; the tool works offline.
+
+The Temper Compendium is data-driven from `assets/data/tempers.js`, with names and descriptions from the wiki and official localization. It is a static reference page.
 
 ### Cross-check against the live wiki
 
@@ -154,6 +162,12 @@ python scripts/build-data.py --tsv /path/to/Soulframe_zh_en.tsv
 - **Times depend on the device clock**: a wrong system clock directly changes the predictions.
 - **Weather names are community names**: the game exposes only preset IDs; display names such as `Clear Skies` come from the wiki.
 - **Meeting rotation has no predictable data before 2026-07-23**.
+- **Some Temper values are uncertain**: the wiki marks several values as unknown, partial, approximate, or assumed; the Temper page shows that confidence instead of inventing numbers.
+- **Two Temper descriptions lack official Chinese text**: `Bypass` and `Unnerving Blow` show the English source and a `Source text` badge; names and all other descriptions use the official localization.
+- **Temper data is a wiki snapshot** (2026-11-27); a future game update may change values before the data file is refreshed.
+- **Some Temper values are uncertain**: the wiki marks several values as unknown, partial, approximate, or assumed; the Temper page shows that confidence instead of inventing numbers.
+- **Two Temper descriptions lack official Chinese text**: `Bypass` and `Unnerving Blow` show the English source and a `Source text` badge; names and all other descriptions use the official localization.
+- **Temper data is a wiki snapshot** (2026-11-27); a future game update may change values before the data file is refreshed.
 
 ## Guide corrections
 
@@ -174,8 +188,10 @@ soulframe-eternium-garden/
   assets/
     css/site.css
     data/game.js          # generated by build-data.py
+    data/tempers.js       # 42 Tempers from the wiki + localization
     data/ui.js            # Chinese / English UI strings
     img/ancestors/        # 8 meeting portraits, 128 / 256
+    img/tempers/          # Temper icons, origin frames/icons, combat-art icons
     img/readme-home.png   # README screenshot
     js/core.js            # clock / weather / shop / meeting algorithms
     js/app.js             # routing, rendering, theme, language, refresh
@@ -184,6 +200,7 @@ soulframe-eternium-garden/
     serve.js              # zero-dependency static server
   test/
     core.test.js          # algorithm anchors and data integrity
+    tempers.test.js       # Temper data and asset integrity
     ui.test.js            # dictionary and page-key alignment
     release.test.js       # release assets, links, and version checks
   .github/workflows/test.yml
@@ -229,4 +246,4 @@ MIT covers the source code only. Soulframe game names, data, portraits, and othe
 
 ## Version
 
-Current version: **0.1.3**. See [CHANGELOG.md](CHANGELOG.md) for the release history.
+Current version: **0.1.4**. See [CHANGELOG.md](CHANGELOG.md) for the release history.

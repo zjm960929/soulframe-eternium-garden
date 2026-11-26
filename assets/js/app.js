@@ -6,6 +6,7 @@
 
   var DATA = window.SFData;
   var UI = window.SF_UI;
+  var TEMPERS = window.SF_TEMPERS;
   var core = window.SFCore;
 
   var THEME_KEY = 'sf-eg-theme';
@@ -511,12 +512,12 @@
     if (page === 'home') {
       title = brand;
       description = t('app.description');
-    } else if (page === 'world') {
+    } else if (page === 'live') {
       title = t('world.title') + ' · ' + brand;
       description = t('app.description');
-    } else if (page === 'more') {
-      title = t('more.title') + ' · ' + brand;
-      description = t('more.lede');
+    } else if (page === 'temper') {
+      title = t('temper.title') + ' · ' + brand;
+      description = t('temper.lede');
     } else {
       title = t('notFound.title') + ' · ' + brand;
       description = t('notFound.body');
@@ -557,13 +558,13 @@
 
     if (route.page === 'home') {
       node = renderHome();
-    } else if (route.page === 'world') {
+    } else if (route.page === 'live') {
       var page = renderWorld();
       node = page.node;
       state.cleanup = page.cleanup;
       state.tick = page.tick;
-    } else if (route.page === 'more') {
-      node = renderMore();
+    } else if (route.page === 'temper') {
+      node = renderTemper();
     } else {
       state.route = 'notfound';
       node = renderNotFound();
@@ -577,7 +578,7 @@
 
     if (options.focus !== false) focusMain();
     if (!options.keepScroll) {
-      if (route.section && state.route === 'world') {
+      if (route.section && state.route === 'live') {
         window.setTimeout(function () { scrollToSection(route.section); }, 0);
       } else {
         try { window.scrollTo(0, 0); } catch (error) { /* ignore */ }
@@ -591,15 +592,27 @@
 
   var TOOLS = [
     {
-      id: 'world',
-      route: '#/world',
+      id: 'live',
+      route: '#/live',
       icon: 'compass',
       nameKey: 'home.tool.world.name',
       descKey: 'home.tool.world.desc',
       available: true,
       keywords: [
         '世界状态', '世界', '时间', '天气', '泽尼斯', '会面', '商店', '密德拉',
-        'world', 'state', 'time', 'weather', 'zenith', 'meeting', 'wares', 'midrath'
+        'live', 'state', 'time', 'weather', 'zenith', 'meeting', 'wares', 'midrath'
+      ]
+    },
+    {
+      id: 'temper',
+      route: '#/temper',
+      icon: 'hammer',
+      nameKey: 'home.tool.temper.name',
+      descKey: 'home.tool.temper.desc',
+      available: true,
+      keywords: [
+        '淬炼', '武器', '词条', '派系', '数值', '效果',
+        'temper', 'tempers', 'weapon', 'origin', 'effect', 'stats'
       ]
     }
   ];
@@ -705,8 +718,7 @@
     for (var i = 0; i < TOOLS.length; i++) cards.push(toolCard(TOOLS[i]));
     cards.push(el('div', {
       class: 'tool-card tool-card--more',
-      'data-search': compactText(moreTitle + ' more tools development 更多功能开发中'),
-      'aria-disabled': 'true'
+      'data-search': compactText(moreTitle + ' more tools development 更多功能开发中')
     }, [
       el('span', { class: 'tool-card__icon' }, [icon('leaf', 'icon--large')]),
       el('span', { class: 'tool-card__title', text: moreTitle })
@@ -757,42 +769,8 @@
       searchRegion
     ]);
 
-    return el('div', { class: 'home' }, [hero, grid, empty]);
-  }
-
-  // ---------------------------------------------------------------
-  // More
-  // ---------------------------------------------------------------
-
-  function renderMore() {
-    var features = [
-      { icon: 'hammer', key: 'builds' },
-      { icon: 'package', key: 'materials' },
-      { icon: 'calendar', key: 'events' }
-    ];
-    var grid = el('div', { class: 'feature-grid' });
-    for (var i = 0; i < features.length; i++) {
-      var feature = features[i];
-      grid.appendChild(el('article', { class: 'feature-card' }, [
-        el('div', { class: 'feature-card__top' }, [
-          el('span', { class: 'feature-card__icon' }, [icon(feature.icon)]),
-          chip(t('more.soon'))
-        ]),
-        el('h2', { text: t('more.feature.' + feature.key + '.name') }),
-        el('p', { text: t('more.feature.' + feature.key + '.desc') }),
-        el('div', { class: 'feature-card__foot', text: t('more.reserved') })
-      ]));
-    }
-
-    return el('div', {}, [
-      el('header', { class: 'page-head' }, [
-        el('p', { class: 'eyebrow', text: t('more.eyebrow') }),
-        el('h1', { text: t('more.title') }),
-        el('p', { class: 'lede', text: t('more.lede') })
-      ]),
-      grid,
-      el('p', { class: 'card__note', text: t('more.note') })
-    ]);
+    grid.appendChild(empty);
+    return el('div', { class: 'home' }, [hero, grid]);
   }
 
   // ---------------------------------------------------------------
@@ -1373,6 +1351,314 @@
       }
     }
     grid.classList.add('is-masonry');
+  }
+
+  var TEMPER_ART_ORDER = ['bow', 'flyblade', 'heavy', 'long-blade', 'magick', 'polearm', 'shield', 'short-blade'];
+  var TEMPER_MELEE_ARTS = ['heavy', 'long-blade', 'polearm', 'shield', 'short-blade'];
+  var TEMPER_RANGED_ARTS = ['bow', 'flyblade'];
+  var TEMPER_ARTS = {
+    bow: { en: 'Bow', zh: '弓箭' },
+    flyblade: { en: 'Flyblade', zh: '飞刃' },
+    heavy: { en: 'Heavy', zh: '重技' },
+    'long-blade': { en: 'Long Blade', zh: '长刀' },
+    magick: { en: 'Magick', zh: '魔法武器' },
+    polearm: { en: 'Polearm', zh: '长柄武器' },
+    shield: { en: 'Shield', zh: '剑盾' },
+    'short-blade': { en: 'Short Blade', zh: '短刀' }
+  };
+  var TEMPER_ORIGINS = [
+    { key: 'all', en: 'All', zh: '全部' },
+    { key: 'universal', en: 'Universal', zh: '通用' },
+    { key: 'cassid', en: 'Cassid', zh: '卡西' },
+    { key: 'dendrit', en: 'Dendrit', zh: '丹缀' },
+    { key: 'feykin', en: 'Feykin', zh: '仙灵裔' },
+    { key: 'mendicant', en: 'Mendicant', zh: '苦行者' },
+    { key: 'ode', en: "Ode'n", zh: '讴徳' }
+  ];
+
+  function addTemperArts(target, keys) {
+    for (var i = 0; i < keys.length; i++) {
+      if (TEMPER_ARTS[keys[i]] && target.indexOf(keys[i]) === -1) target.push(keys[i]);
+    }
+  }
+
+  function temperArts(item) {
+    var found = [];
+    var table = (item.weaponTable || '').split(',');
+    for (var i = 0; i < table.length; i++) {
+      var token = table[i].trim().replace(/\+.*$/, '').trim();
+      if (token === 'ALL' || token === 'All Weapons') addTemperArts(found, TEMPER_ART_ORDER);
+      else if (token === 'Melee') addTemperArts(found, TEMPER_MELEE_ARTS);
+      else if (token === 'Ranged') addTemperArts(found, TEMPER_RANGED_ARTS);
+      else if (token === 'Heavy') addTemperArts(found, ['heavy']);
+      else if (token === 'Long Blade') addTemperArts(found, ['long-blade']);
+      else if (token === 'Short Blade') addTemperArts(found, ['short-blade']);
+      else if (token === 'Polearm') addTemperArts(found, ['polearm']);
+      else if (token === 'Shield') addTemperArts(found, ['shield']);
+      else if (token === 'Magick') addTemperArts(found, ['magick']);
+      else if (token === 'Flyblade') addTemperArts(found, ['flyblade']);
+      else if (token === 'Bow') addTemperArts(found, ['bow']);
+    }
+    if (!found.length) {
+      for (var w = 0; w < item.weapons.length; w++) {
+        var weapon = item.weapons[w];
+        if (weapon === 'All Weapons') addTemperArts(found, TEMPER_ART_ORDER);
+        else if (weapon === 'Melee') addTemperArts(found, TEMPER_MELEE_ARTS);
+        else if (weapon === 'Bow') addTemperArts(found, ['bow']);
+        else if (weapon === 'Magick') addTemperArts(found, ['magick']);
+        else if (weapon === 'Flyblade') addTemperArts(found, ['flyblade']);
+        else if (weapon === 'Heavy Melee') addTemperArts(found, ['heavy']);
+        else if (weapon === 'Light Melee') addTemperArts(found, ['long-blade']);
+        else if (weapon === 'Non-Bow') addTemperArts(found, TEMPER_ART_ORDER.filter(function (key) { return key !== 'bow'; }));
+        else if (weapon === 'Non-Magick') addTemperArts(found, TEMPER_ART_ORDER.filter(function (key) { return key !== 'magick'; }));
+        else if (weapon === 'Light Primaries') addTemperArts(found, ['heavy']);
+      }
+    }
+    return TEMPER_ART_ORDER.filter(function (key) { return found.indexOf(key) !== -1; });
+  }
+
+  function renderTemper() {
+    var page = el('div', { class: 'temper-page' });
+    var items = TEMPERS.items || [];
+    var isZh = state.lang === 'zh';
+    var filterState = { origin: 'all', art: 'all' };
+    var filterButtons = [];
+    var cards = [];
+    var resetButton;
+    var emptyState;
+    var filterStatus;
+
+    var header = el('header', { class: 'page-head temper-head' }, [
+      el('p', { class: 'eyebrow', text: t('temper.eyebrow') }),
+      el('h1', { text: t('temper.title') })
+    ]);
+    page.appendChild(header);
+
+    function makeFilterChip(type, key, label, iconSrc) {
+      var children = [];
+      if (iconSrc) {
+        children.push(el('img', {
+          class: 'temper-filter-chip__icon',
+          src: iconSrc,
+          alt: '',
+          width: 20,
+          height: 20,
+          loading: 'lazy',
+          decoding: 'async'
+        }));
+      }
+      children.push(document.createTextNode(label));
+      var chip = el('button', {
+        class: 'temper-filter-chip',
+        type: 'button',
+        'data-filter': type,
+        'data-value': key,
+        'aria-pressed': key === 'all' ? 'true' : 'false'
+      }, children);
+      chip.addEventListener('click', function () {
+        filterState[type] = key;
+        syncFilterButtons();
+        applyTemperFilters();
+      });
+      filterButtons.push({ type: type, key: key, node: chip });
+      return chip;
+    }
+
+    function syncFilterButtons() {
+      for (var i = 0; i < filterButtons.length; i++) {
+        var entry = filterButtons[i];
+        entry.node.setAttribute('aria-pressed', filterState[entry.type] === entry.key ? 'true' : 'false');
+      }
+      if (resetButton) resetButton.disabled = filterState.origin === 'all' && filterState.art === 'all';
+    }
+
+    function applyTemperFilters() {
+      var visible = 0;
+      for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        var originOK = filterState.origin === 'all' || card.getAttribute('data-origin') === filterState.origin;
+        var arts = (card.getAttribute('data-arts') || '').split(' ');
+        var artOK = filterState.art === 'all' || arts.indexOf(filterState.art) !== -1;
+        var show = originOK && artOK;
+        card.hidden = !show;
+        if (show) visible++;
+      }
+      if (emptyState) emptyState.hidden = visible !== 0;
+      if (filterStatus) filterStatus.textContent = t('temper.filter.results', { n: visible });
+    }
+
+    var originChips = [];
+    for (var oi = 0; oi < TEMPER_ORIGINS.length; oi++) {
+      (function (origin) {
+        originChips.push(makeFilterChip(
+          'origin',
+          origin.key,
+          origin.key === 'all' ? t('temper.filter.allOrigins') : (isZh ? origin.zh : origin.en),
+          origin.key === 'all' ? '' : 'assets/img/tempers/origins/' + origin.key + '.png'
+        ));
+      }(TEMPER_ORIGINS[oi]));
+    }
+
+    var artChips = [];
+    artChips.push(makeFilterChip('art', 'all', t('temper.filter.allWeapons'), ''));
+    for (var ai = 0; ai < TEMPER_ART_ORDER.length; ai++) {
+      (function (artKey) {
+        var art = TEMPER_ARTS[artKey];
+        artChips.push(makeFilterChip(
+          'art',
+          artKey,
+          isZh ? art.zh : art.en,
+          'assets/img/tempers/arts/' + artKey + '.png'
+        ));
+      }(TEMPER_ART_ORDER[ai]));
+    }
+
+    resetButton = el('button', {
+      class: 'temper-filter-reset',
+      type: 'button',
+      text: t('temper.filter.reset'),
+      disabled: true
+    });
+    resetButton.addEventListener('click', function () {
+      filterState.origin = 'all';
+      filterState.art = 'all';
+      syncFilterButtons();
+      applyTemperFilters();
+    });
+
+    var filters = el('search', {
+      class: 'temper-filters',
+      'aria-label': t('temper.filter.label')
+    }, [
+      el('div', { class: 'temper-filter-row' }, [
+        el('span', { class: 'temper-filter-label', text: t('temper.filter.origin') }),
+        el('div', {
+          class: 'temper-filter-options',
+          role: 'group',
+          'aria-label': t('temper.filter.origin')
+        }, originChips)
+      ]),
+      el('div', { class: 'temper-filter-row' }, [
+        el('span', { class: 'temper-filter-label', text: t('temper.filter.weapon') }),
+        el('div', {
+          class: 'temper-filter-options',
+          role: 'group',
+          'aria-label': t('temper.filter.weapon')
+        }, artChips)
+      ]),
+      el('div', { class: 'temper-filter-actions' }, [resetButton])
+    ]);
+    page.appendChild(filters);
+
+    filterStatus = el('p', {
+      class: 'visually-hidden',
+      role: 'status',
+      'aria-live': 'polite',
+      'aria-atomic': 'true'
+    });
+    page.appendChild(filterStatus);
+
+    var grid = el('div', { class: 'temper-grid' });
+    for (var i = 0; i < items.length; i++) {
+      (function (item) {
+        var name = isZh && item.zh ? item.zh : item.name;
+        var altName = isZh ? item.name : (item.zh || '');
+        var description = isZh && item.descriptionZh ? item.descriptionZh : item.description;
+        var descriptionIsSource = isZh && !item.descriptionZh;
+        var icon = el('span', { class: 'temper-icon' }, [
+          el('img', {
+            class: 'temper-icon__art',
+            src: 'assets/img/tempers/icons/' + item.icon,
+            alt: '',
+            width: 56,
+            height: 56,
+            loading: 'lazy',
+            decoding: 'async'
+          }),
+          el('img', {
+            class: 'temper-icon__frame',
+            src: 'assets/img/tempers/frames/' + item.frame + '.png',
+            alt: '',
+            width: 56,
+            height: 56,
+            loading: 'lazy',
+            decoding: 'async',
+            'aria-hidden': 'true'
+          })
+        ]);
+        var titleBlock = el('div', { class: 'temper-card__names' }, [
+          el('h2', { class: 'temper-card__title', text: name }),
+          altName ? el('p', { class: 'temper-card__alt', text: altName, lang: isZh ? 'en' : 'zh-CN' }) : null
+        ]);
+        var origin = el('span', {
+          class: 'temper-origin temper-origin--' + item.frame
+        }, [
+          el('img', {
+            class: 'temper-origin-icon',
+            src: 'assets/img/tempers/origins/' + item.frame + '.png',
+            alt: '',
+            width: 16,
+            height: 16,
+            loading: 'lazy',
+            decoding: 'async'
+          }),
+          document.createTextNode(isZh && item.originZh ? item.originZh : item.origin)
+        ]);
+        var artKeys = temperArts(item);
+        var artNodes = [];
+        for (var ai = 0; ai < artKeys.length; ai++) {
+          (function (artKey) {
+            var art = TEMPER_ARTS[artKey];
+            var label = isZh ? art.zh : art.en;
+            artNodes.push(el('span', {
+              class: 'temper-art',
+              title: label,
+              'aria-label': label,
+              role: 'img'
+            }, [
+              el('img', {
+                src: 'assets/img/tempers/arts/' + artKey + '.png',
+                alt: '',
+                width: 22,
+                height: 22,
+                loading: 'lazy',
+                decoding: 'async'
+              })
+            ]));
+          }(artKeys[ai]));
+        }
+        var card = el('article', {
+          class: 'temper-card',
+          'data-origin': item.frame,
+          'data-arts': artKeys.join(' ')
+        }, [
+          el('div', { class: 'temper-card__head' }, [
+            icon,
+            el('div', { class: 'temper-card__heading' }, [titleBlock]),
+            origin
+          ]),
+          el('p', {
+            class: 'temper-desc' + (descriptionIsSource ? ' lang-en' : ''),
+            text: description,
+            lang: descriptionIsSource ? 'en' : null
+          }),
+          descriptionIsSource ? el('span', { class: 'temper-source-badge', text: t('temper.untranslated') }) : null,
+          el('div', { class: 'temper-weapon' }, [
+            el('span', { class: 'temper-meta-label', text: t('temper.weapon') }),
+            el('span', { class: 'temper-art-list' }, artNodes)
+          ])
+        ]);
+        cards.push(card);
+        grid.appendChild(card);
+      }(items[i]));
+    }
+
+    emptyState = el('p', { class: 'temper-filter-empty', text: t('temper.filter.empty'), hidden: true });
+    page.appendChild(grid);
+    page.appendChild(emptyState);
+    syncFilterButtons();
+    applyTemperFilters();
+    return page;
   }
 
   function renderWorld() {
@@ -2120,7 +2406,7 @@
   }
 
   function init() {
-    if (!DATA || !UI || !core) {
+    if (!DATA || !UI || !TEMPERS || !core) {
       fatal('Soulframe 永恒花园 / Soulframe Eternium Garden 无法加载数据。 / Failed to load application data.');
       return;
     }
@@ -2163,7 +2449,7 @@
       }
     });
     document.addEventListener('visibilitychange', function () {
-      if (!document.hidden && state.route === 'world' && state.tick) state.tick();
+      if (!document.hidden && state.route === 'live' && state.tick) state.tick();
     });
 
     renderRoute({ focus: false });
