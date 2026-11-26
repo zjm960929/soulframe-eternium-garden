@@ -4,7 +4,7 @@
 
 ![Soulframe 永恒花园主页](assets/img/readme-home.png)
 
-一个双语、离线可用的 Soulframe 实用工具合集。当前版本 **v0.1.4**，完成 **世界状态** 页（`#/live`：密德拉的昼夜时间、天气、泽尼斯的每日商品，以及受祝福的会面）和 **淬炼大全**（`#/temper`）。
+一个双语、离线可用的 Soulframe 实用工具合集。当前版本 **v0.1.5**，完成 **世界状态** 页（`#/live`：密德拉的昼夜时间、天气、泽尼斯的每日商品，以及受祝福的会面）和 **淬炼大全**（`#/temper`）。
 
 中文版页面名称使用 **Soulframe 永恒花园**，英文版保持 **Soulframe Eternium Garden**。
 
@@ -248,4 +248,4 @@ MIT 仅覆盖源代码；Soulframe 游戏名称、数据、头像和其他游戏
 
 ## 版本
 
-当前版本 **0.1.4**。变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+当前版本 **0.1.5**。变更记录见 [CHANGELOG.md](CHANGELOG.md)。

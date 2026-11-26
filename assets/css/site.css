@@ -1886,6 +1886,10 @@ body[data-page="temper"] .footer__inner {
   box-shadow: var(--shadow);
 }
 
+.temper-card[hidden] {
+  display: none;
+}
+
 .temper-card__head {
   display: flex;
   align-items: flex-start;

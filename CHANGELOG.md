@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.5 - 2026-11-27
+
+### Fixed
+
+- Temper filters now visually hide filtered cards via `.temper-card[hidden]`; previously the card's `display: flex` overrode the `hidden` attribute.
+- Added a regression test for the hidden-card rule.
+
 ## 0.1.4 - 2026-11-27
 
 ### Added

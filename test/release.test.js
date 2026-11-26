@@ -16,7 +16,7 @@ const GITHUB = 'https://github.com/zjm960929/soulframe-eternium-garden';
 const EMAIL = 'mailto:zjm960929@outlook.com';
 
 test('release metadata is present', () => {
-  assert.equal(pkg.version, '0.1.4');
+  assert.equal(pkg.version, '0.1.5');
   assert.equal(pkg.private, true);
   assert.equal(pkg.license, 'MIT');
   assert.equal(pkg.engines.node, '>=20');
@@ -113,6 +113,6 @@ test('layout editor exposes per-module width controls', () => {
 test('README no longer claims the project is unpublished', () => {
   const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
   assert.ok(!readme.includes('尚未发布到 GitHub'));
-  assert.ok(readme.includes('v0.1.4'));
+  assert.ok(readme.includes('v0.1.5'));
   assert.ok(readme.includes('NOTICE.md'));
 });

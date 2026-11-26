@@ -53,3 +53,8 @@ test('Temper frames and icon directories ship all assets', () => {
   assert.deepEqual(origins.sort(), ['cassid.png', 'dendrit.png', 'feykin.png', 'mendicant.png', 'ode.png', 'universal.png']);
   assert.deepEqual(arts.sort(), ['bow.png', 'flyblade.png', 'heavy.png', 'long-blade.png', 'magick.png', 'polearm.png', 'shield.png', 'short-blade.png']);
 });
+
+test('Temper filtering visually hides filtered cards', () => {
+  const css = fs.readFileSync(path.join(root, 'assets/css/site.css'), 'utf8');
+  assert.match(css, /\.temper-card\[hidden\]\s*\{[^}]*display:\s*none/);
+});
